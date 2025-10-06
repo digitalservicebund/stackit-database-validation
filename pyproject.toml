@@ -1,0 +1,19 @@
+[project]
+name = "stackit-database-validation"
+version = "0.1.0"
+description = "Script to validate that all databases only have the the Cluster egress IP in their ACL"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.10.1",
+    "typer>=0.17.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-cov>=6.3.0",
+    "pytest-httpx>=0.35.0",
+    "ruff>=0.12.12",
+]
