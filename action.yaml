@@ -8,10 +8,16 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - run: echo "INSTALL PYTHON"
+      shell: bash
     - name: "Install Python"
       uses: actions/setup-python@v5
+    - run: echo "INSTALL UV"
+      shell: bash
     - name: "Install uv"
       uses: astral-sh/setup-uv@v6
+    - run: echo "RUN script"
+      shell: bash
     - name: "Validate STACKIT Database ACLs"
       run:  uv run src/main.py validate-org ${{ inputs.organisation_id }}
       shell: bash
