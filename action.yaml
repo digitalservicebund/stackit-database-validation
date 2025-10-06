@@ -4,6 +4,9 @@ inputs:
   organisation_id:
     description: 'The Organisation ID, to validate all Databases in your STACKIT organisation.'
     required: true
+  stackit_service_account_key_path:
+    description: "Path to a STACKIT Service Account Key to authenticate against STACKIT API"
+    required: true
 
 runs:
   using: 'composite'
@@ -30,3 +33,5 @@ runs:
       run:  uv run src/main.py validate-org ${{ inputs.organisation_id }}
       shell: bash
       working-directory: ${{ github.action_path }}
+      env:
+        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ inputs.stackit_service_account_key_path }}
