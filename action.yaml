@@ -2,14 +2,22 @@ name: 'Validate STACKIT Database ACLs'
 description: 'A github action that uses the STACKIT API to ensure that database ACLs only allow the cluster to connect to the database instances.'
 inputs:
   organisation_id:
-    description: 'The Organisation ID, to validate all Databases in your STACKIT organisation.'
-    required: true
+    description: 'The Organisation ID, to validate all Databases in your STACKIT organisation. Either provide organisation_id or project_id'
+    required: false
+  project_id:
+    description: 'The Project ID, to validate all Databases in your STACKIT project.'
+    required: false
+  prod_egress_range:
+    description: 'The CIDR Range of the production cluster'
+    required: false
+  non_prod_egress_range:
+    description: 'The CIDR Range of the non-prod cluster'
+    required: false
   stackit_service_account_key:
     description: "STACKIT Service Account Key to authenticate against STACKIT API"
     required: true
 
 runs:
-
   using: 'composite'
   steps:
     - name: "Install Python"
@@ -39,9 +47,19 @@ runs:
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
       run: |
         echo "$STACKIT_SERVICE_ACCOUNT_KEY" > ${{ github.action_path }}/stackit-credentials.json
-    - name: "Validate STACKIT Database ACLs"
+    - name: "Validate STACKIT Database ACLs in Organisation"
+      if: ${{ inputs.organisation_id }}
       shell: bash
       run:  uv run src/main.py validate-org ${{ inputs.organisation_id }}
       working-directory: ${{ github.action_path }}
       env:
         STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.action_path }}/stackit-credentials.json
+    - name: "Validate STACKIT Database ACLs in Project"
+      if: ${{ inputs.project_id }}
+      shell: bash
+      run:  uv run src/main.py validate-projects ${{ inputs.project_id }}
+      working-directory: ${{ github.action_path }}
+      env:
+        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.action_path }}/stackit-credentials.json
+        PROD_EGRESS_RANGE: ${{ inputs.prod_egress_range }}
+        NON_PROD_EGRESS_RANGE: ${{ inputs.non_prod_egress_range }}
