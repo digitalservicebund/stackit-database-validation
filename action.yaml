@@ -23,7 +23,6 @@ runs:
     - name: "Install STACKIT CLI"
       shell: bash
       run: |
-        sudo apt-get update
         sudo apt-get install curl gnupg
         curl https://packages.stackit.cloud/keys/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/stackit.gpg
         echo "deb [signed-by=/usr/share/keyrings/stackit.gpg] https://packages.stackit.cloud/apt/cli stackit main" | sudo tee -a /etc/apt/sources.list.d/stackit.list
