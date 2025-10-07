@@ -47,19 +47,22 @@ class OrgSettings(StackITSettings):
 
 @lru_cache
 def get_bearer_token(stackit_service_account_key_path: str):
-    result = subprocess.run(
-        [
-            "stackit",
-            "auth",
-            "activate-service-account",
-            "--service-account-key-path",
-            stackit_service_account_key_path,
-            "--only-print-access-token",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    try:
+        result = subprocess.run(
+            [
+                "stackit",
+                "auth",
+                "activate-service-account",
+                "--service-account-key-path",
+                stackit_service_account_key_path,
+                "--only-print-access-token",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Could not get auth token: {e.stderr}") from e
     token = result.stdout.strip()
     return token
 

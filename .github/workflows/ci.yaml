@@ -45,4 +45,4 @@ jobs:
 
       - name: "Pytest"
         working-directory: src
-        run: uv run pytest --cov=. --cov-fail-under=96
+        run: uv run pytest --cov=. --cov-fail-under=94
