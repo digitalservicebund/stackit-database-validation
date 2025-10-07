@@ -5,10 +5,12 @@ makes sure that the databases are only accessible via the cluster.
 
 ## Usage
 
-### Validate all DBs in an organisation
-
 The action will fail as soon as at least one database has other ACLs than the cluster egress CIDR range. The output will
 contain more details about what project and what database is causing the problem.
+
+It's recommended to run this regularly or on every push on the main branch. 
+
+### Validate all DBs in an organisation
 
 ```yaml
 jobs:
