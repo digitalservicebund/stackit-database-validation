@@ -15,7 +15,7 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel("WARNING")
 logger = logging.getLogger(__name__)
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_short=False)
 
 
 class ClusterConfig(BaseModel):
