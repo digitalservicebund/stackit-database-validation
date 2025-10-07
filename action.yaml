@@ -44,6 +44,10 @@ runs:
       env:
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
       run: echo "$STACKIT_SERVICE_ACCOUNT_KEY" > ${{ github.action_path }}/stackit-credentials.json
+    - name: "test credentials"
+      shell: bash
+      run: echo ${{ github.action_path }}/stackit-credentials.json
+
     - name: "Validate STACKIT Database ACLs"
       shell: bash
       run:  uv run src/main.py validate-org ${{ inputs.organisation_id }}
