@@ -43,7 +43,9 @@ runs:
       shell: bash
       env:
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
-      run: echo "$STACKIT_SERVICE_ACCOUNT_KEY" > ${{ github.action_path }}/stackit-credentials.json
+      run: |
+        echo "$STACKIT_SERVICE_ACCOUNT_KEY"
+        echo "$STACKIT_SERVICE_ACCOUNT_KEY" > ${{ github.action_path }}/stackit-credentials.json
     - name: "test credentials"
       shell: bash
       run: echo ${{ github.action_path }}/stackit-credentials.json
