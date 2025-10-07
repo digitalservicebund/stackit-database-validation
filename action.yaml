@@ -19,6 +19,7 @@ runs:
     - name: "Install uv"
       uses: astral-sh/setup-uv@v6
       with:
+        ignore-empty-workdir: true
         working-directory: ${{ github.action_path }}
     - name: "Install STACKIT CLI"
       shell: bash
