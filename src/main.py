@@ -68,7 +68,7 @@ def get_bearer_token(stackit_service_account_key_path: str):
 
 
 def get_cluster_egress_ip(
-        project_id: str, cluster_name: str, config: OrgSettings
+    project_id: str, cluster_name: str, config: OrgSettings
 ) -> list[str]:
     """Fetches the egress IP of a specific cluster."""
     url = f"https://ske.api.stackit.cloud/v2/projects/{project_id}/regions/eu01/clusters/{cluster_name}"
@@ -89,7 +89,7 @@ def get_cluster_egress_ip(
 
 
 def get_all_projects(
-        organization_id: str, config: OrgSettings
+    organization_id: str, config: OrgSettings
 ) -> list[tuple[str, str]]:
     """Fetches all projects from the Resource Manager API."""
     url = "https://resource-manager.api.stackit.cloud/v2/projects"
@@ -109,7 +109,7 @@ def get_all_projects(
 
 
 def get_project_details(
-        project_ids: list[str], config: StackITSettings
+    project_ids: list[str], config: StackITSettings
 ) -> list[tuple[str, str]]:
     """Fetches project details for a list of project ids from the Resource Manager API."""
     projects = []
@@ -161,9 +161,9 @@ def get_acls(project_id: str, instance_id: str, config: StackITSettings):
 
 
 def check_database_acl_of_project(
-        project_id: str,
-        cluster_egress_range: list[str],
-        settings: StackITSettings,
+    project_id: str,
+    cluster_egress_range: list[str],
+    settings: StackITSettings,
 ) -> bool:
     all_acls_are_correct = True
     # Determine the correct egress IP based on the project name
@@ -189,9 +189,9 @@ def check_database_acl_of_project(
 
 
 def get_egress_range(
-        project_name: str,
-        prod_cluster_egress_range: list[str],
-        non_prod_cluster_egress_range: list[str],
+    project_name: str,
+    prod_cluster_egress_range: list[str],
+    non_prod_cluster_egress_range: list[str],
 ) -> list[str]:
     if "NON-PROD" in project_name.upper():
         cluster_egress_range = non_prod_cluster_egress_range
@@ -233,7 +233,7 @@ def validate_org(organization_id: str):
         )
 
         if not check_database_acl_of_project(
-                project_id, cluster_egress_range, settings
+            project_id, cluster_egress_range, settings
         ):
             all_acls_are_correct = False
 
@@ -247,15 +247,15 @@ def validate_org(organization_id: str):
 
 @app.command()
 def validate_projects(
-        project_ids: list[str],
-        prod_egress_range: list[str] | None = typer.Option(
-            help="Egress IP Range of the Production Cluster. Env: PROD_EGRESS_RANGE",
-            default=None,
-        ),
-        non_prod_egress_range: list[str] | None = typer.Option(
-            help="Egress IP Range of the Non-Prod Cluster. Env: NON_PROD_EGRESS_RANGE",
-            default=None,
-        ),
+    project_ids: list[str],
+    prod_egress_range: list[str] | None = typer.Option(
+        help="Egress IP Range of the Production Cluster. Env: PROD_EGRESS_RANGE",
+        default=None,
+    ),
+    non_prod_egress_range: list[str] | None = typer.Option(
+        help="Egress IP Range of the Non-Prod Cluster. Env: NON_PROD_EGRESS_RANGE",
+        default=None,
+    ),
 ):
     logger.info("Starting Stackit ACL check script...")
     settings = StackITSettings()
@@ -266,7 +266,7 @@ def validate_projects(
             project_name, prod_egress_range, non_prod_egress_range
         )
         if not check_database_acl_of_project(
-                project_id, cluster_egress_range, settings
+            project_id, cluster_egress_range, settings
         ):
             all_acls_are_correct = False
 
