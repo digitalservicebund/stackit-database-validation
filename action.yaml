@@ -32,11 +32,10 @@ runs:
     - name: "Install STACKIT CLI"
       shell: bash
       run: |
-        sudo apt-get install curl gnupg
-        curl https://packages.stackit.cloud/keys/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/stackit.gpg
-        echo "deb [signed-by=/usr/share/keyrings/stackit.gpg] https://packages.stackit.cloud/apt/cli stackit main" | sudo tee -a /etc/apt/sources.list.d/stackit.list
-        sudo apt-get update
-        sudo apt-get install stackit
+          curl -L https://github.com/stackitcloud/stackit-cli/releases/download/v0.48.0/stackit-cli_0.48.0_linux_amd64.tar.gz -o stackitcli.tar.gz
+          tar -xzf stackitcli.tar.gz
+          sudo mv stackit /usr/local/bin/stackit
+          rm stackitcli.tar.gz
     - name: "Install dependencies"
       run: uv sync
       working-directory: ${{ github.action_path }}
