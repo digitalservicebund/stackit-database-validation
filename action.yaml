@@ -46,7 +46,7 @@ runs:
       run:  uv run src/main.py validate-org ${{ inputs.organisation_id }}
       working-directory: ${{ github.action_path }}
       env:
-        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.action_path }}/stackit-credentials.json
+        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
     - name: "Validate STACKIT Database ACLs in Project"
       if: ${{ inputs.project_id }}
       shell: bash
