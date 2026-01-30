@@ -1,6 +1,7 @@
 import logging
 import subprocess
 from functools import lru_cache
+from typing import cast
 
 import httpx
 import typer
@@ -23,15 +24,11 @@ class ClusterConfig(BaseModel):
     project_id: str
     egress_range: list[str] | None
 
-    def get_egress_range(self, settings: "OrgSettings"):
-        self.egress_range = get_cluster_egress_ip(self.project_id, self.name, settings)
+    def get_egress_range(self) -> None:
+        self.egress_range = get_cluster_egress_ip(self.project_id, self.name)
 
 
-class StackITSettings(BaseSettings):
-    stackit_service_account_key_path: str = "../stackit-credentials.json"
-
-
-class OrgSettings(StackITSettings):
+class OrgSettings(BaseSettings):
     prod_cluster: ClusterConfig = ClusterConfig(
         name="production",
         project_id="df003e90-b77d-4d31-a06c-cd7f4013076d",
@@ -42,19 +39,16 @@ class OrgSettings(StackITSettings):
         project_id="dceaea5e-fc88-4adb-8c7f-6bcb112835bb",
         egress_range=None,
     )
-    stackit_service_account_key_path: str = "../stackit-credentials.json"
 
 
 @lru_cache
-def get_bearer_token(stackit_service_account_key_path: str):
+def get_bearer_token():
     try:
         result = subprocess.run(
             [
                 "stackit",
                 "auth",
                 "activate-service-account",
-                "--service-account-key-path",
-                stackit_service_account_key_path,
                 "--only-print-access-token",
             ],
             capture_output=True,
@@ -68,14 +62,14 @@ def get_bearer_token(stackit_service_account_key_path: str):
 
 
 def get_cluster_egress_ip(
-    project_id: str, cluster_name: str, config: OrgSettings
+    project_id: str, cluster_name: str
 ) -> list[str]:
     """Fetches the egress IP of a specific cluster."""
     url = f"https://ske.api.stackit.cloud/v2/projects/{project_id}/regions/eu01/clusters/{cluster_name}"
     response = httpx.get(
         url,
         headers={
-            "Authorization": f"Bearer {get_bearer_token(config.stackit_service_account_key_path)}",
+            "Authorization": f"Bearer {get_bearer_token()}",
             "Accept": "application/json",
         },
     )
@@ -89,27 +83,43 @@ def get_cluster_egress_ip(
 
 
 def get_all_projects(
-    organization_id: str, config: OrgSettings
+    organization_id: str
 ) -> list[tuple[str, str]]:
     """Fetches all projects from the Resource Manager API."""
-    url = "https://resource-manager.api.stackit.cloud/v2/projects"
-    response = httpx.get(
+    url = "https://resource-manager.api.stackit.cloud/v2/folders"
+    folder_resp = httpx.get(
         url,
         headers={
-            "Authorization": f"Bearer {get_bearer_token(config.stackit_service_account_key_path)}",
+            "Authorization": f"Bearer {get_bearer_token()}",
             "Accept": "application/json",
         },
         params={"containerParentId": organization_id},
     )
-    logger.debug(f"Projects response: {response.text}")
-    response.raise_for_status()
-    projects = response.json()["items"]
+    logger.debug(f"Folders response: {folder_resp.text}")
+    folder_resp.raise_for_status()
+    folders = folder_resp.json()["items"]
+    project_ids = []
+    for folder in folders:
+        folder_id = folder["folderId"]
+        projects_url = f"https://resource-manager.api.stackit.cloud/v2/projects"
+        response = httpx.get(
+            projects_url,
+            headers={
+                "Authorization": f"Bearer {get_bearer_token()}",
+                "Accept": "application/json",
+            },
+            params={"containerParentId": folder_id},
+        )
+        logger.debug(f"Projects response: {response.text}")
+        response.raise_for_status()
+        projects = response.json().get("items", [])
+        project_ids.extend([(p.get("projectId"), p.get("name")) for p in projects])
     # Return both the project ID and its name for validation logic
-    return [(p.get("projectId"), p.get("name")) for p in projects]
+    return project_ids
 
 
 def get_project_details(
-    project_ids: list[str], config: StackITSettings
+    project_ids: list[str],
 ) -> list[tuple[str, str]]:
     """Fetches project details for a list of project ids from the Resource Manager API."""
     projects = []
@@ -118,7 +128,7 @@ def get_project_details(
         response = httpx.get(
             url,
             headers={
-                "Authorization": f"Bearer {get_bearer_token(config.stackit_service_account_key_path)}",
+                "Authorization": f"Bearer {get_bearer_token()}",
                 "Accept": "application/json",
             },
         )
@@ -128,13 +138,13 @@ def get_project_details(
     return projects
 
 
-def get_databases_in_project(project_id, config: StackITSettings):
+def get_databases_in_project(project_id: str):
     """Fetches all PostgreSQL Flexible databases for a given project."""
     url = f"https://postgres-flex-service.api.stackit.cloud/v2/projects/{project_id}/regions/eu01/instances"
     response = httpx.get(
         url,
         headers={
-            "Authorization": f"Bearer {get_bearer_token(config.stackit_service_account_key_path)}",
+            "Authorization": f"Bearer {get_bearer_token()}",
             "Accept": "application/json",
         },
     )
@@ -143,13 +153,13 @@ def get_databases_in_project(project_id, config: StackITSettings):
     return response.json().get("items", [])
 
 
-def get_acls(project_id: str, instance_id: str, config: StackITSettings):
+def get_acls(project_id: str, instance_id: str):
     """Fetches all ACLs of a PostgreSQL database."""
     url = f"https://postgres-flex-service.api.stackit.cloud/v2/projects/{project_id}/regions/eu01/instances/{instance_id}"
     response = httpx.get(
         url,
         headers={
-            "Authorization": f"Bearer {get_bearer_token(config.stackit_service_account_key_path)}",
+            "Authorization": f"Bearer {get_bearer_token()}",
             "Accept": "application/json",
         },
     )
@@ -163,17 +173,16 @@ def get_acls(project_id: str, instance_id: str, config: StackITSettings):
 def check_database_acl_of_project(
     project_id: str,
     cluster_egress_range: list[str],
-    settings: StackITSettings,
 ) -> bool:
     all_acls_are_correct = True
     # Determine the correct egress IP based on the project name
-    databases = get_databases_in_project(project_id, settings)
+    databases = get_databases_in_project(project_id)
     if not databases:
         logger.info("No databases in this project")
     for db in databases:
         db_instance_id = db["id"]
         db_name = db["name"]
-        acl_rules = get_acls(project_id, db_instance_id, settings)
+        acl_rules = get_acls(project_id, db_instance_id)
         if set(acl_rules) == set(cluster_egress_range):
             logger.info(
                 f"✅ Database instance {db_name} ({db_instance_id}): ACL is correct."
@@ -209,14 +218,14 @@ def validate_org(organization_id: str):
     settings = OrgSettings()
 
     logger.info("Getting cluster egress IPs...")
-    settings.prod_cluster.get_egress_range(settings)
-    settings.non_prod_cluster.get_egress_range(settings)
+    settings.prod_cluster.get_egress_range()
+    settings.non_prod_cluster.get_egress_range()
 
     logger.info(f"PROD Cluster Egress IP: {settings.prod_cluster.egress_range}")
     logger.info(f"NON-PROD Cluster Egress IP: {settings.non_prod_cluster.egress_range}")
 
     logger.info("Getting all projects...")
-    projects = get_all_projects(organization_id, settings)
+    projects = get_all_projects(organization_id)
     if not projects:
         logger.info("No projects found. Exiting.")
         return
@@ -228,12 +237,13 @@ def validate_org(organization_id: str):
     for project_id, project_name in projects:
         cluster_egress_range = get_egress_range(
             project_name,
-            settings.prod_cluster.egress_range,
-            settings.non_prod_cluster.egress_range,
+            # egress ranges are set in line 221
+            cast(list[str], settings.prod_cluster.egress_range),
+            cast(list[str],settings.non_prod_cluster.egress_range),
         )
 
         if not check_database_acl_of_project(
-            project_id, cluster_egress_range, settings
+            project_id, cluster_egress_range
         ):
             all_acls_are_correct = False
 
@@ -248,25 +258,24 @@ def validate_org(organization_id: str):
 @app.command()
 def validate_projects(
     project_ids: list[str],
-    prod_egress_range: list[str] | None = typer.Option(
+    prod_egress_range: list[str] = typer.Option(
         help="Egress IP Range of the Production Cluster. Env: PROD_EGRESS_RANGE",
         default=None,
     ),
-    non_prod_egress_range: list[str] | None = typer.Option(
+    non_prod_egress_range: list[str] = typer.Option(
         help="Egress IP Range of the Non-Prod Cluster. Env: NON_PROD_EGRESS_RANGE",
         default=None,
     ),
 ):
     logger.info("Starting Stackit ACL check script...")
-    settings = StackITSettings()
     all_acls_are_correct = True
-    projects = get_project_details(project_ids, settings)
+    projects = get_project_details(project_ids)
     for project_id, project_name in projects:
         cluster_egress_range = get_egress_range(
             project_name, prod_egress_range, non_prod_egress_range
         )
         if not check_database_acl_of_project(
-            project_id, cluster_egress_range, settings
+            project_id, cluster_egress_range
         ):
             all_acls_are_correct = False
 
