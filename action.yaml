@@ -16,6 +16,12 @@ inputs:
   stackit_service_account_key:
     description: "STACKIT Service Account Key to authenticate against STACKIT API"
     required: true
+  additional_non_prod_ip:
+    description: "Additional IP address or CIDR range that should be allowed to access non-prod databases."
+    required: false
+  additional_prod_ip:
+    description: "Additional IP address or CIDR range that should be allowed to access prod databases."
+    required: false
 
 runs:
   using: 'composite'
@@ -47,6 +53,8 @@ runs:
       working-directory: ${{ github.action_path }}
       env:
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
+        ADDITIONAL_PROD_IP: ${{ inputs.additional_prod_ip }}
+        ADDITIONAL_NON_PROD_IP: ${{ inputs.additional_non_prod_ip }}
     - name: "Validate STACKIT Database ACLs in Project"
       if: ${{ inputs.project_id }}
       shell: bash
