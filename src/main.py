@@ -62,7 +62,7 @@ def get_bearer_token():
 
 
 def get_cluster_egress_ip(
-    project_id: str, cluster_name: str
+        project_id: str, cluster_name: str
 ) -> list[str]:
     """Fetches the egress IP of a specific cluster."""
     url = f"https://ske.api.stackit.cloud/v2/projects/{project_id}/regions/eu01/clusters/{cluster_name}"
@@ -83,7 +83,7 @@ def get_cluster_egress_ip(
 
 
 def get_all_projects(
-    organization_id: str
+        organization_id: str
 ) -> list[tuple[str, str]]:
     """Fetches all projects from the Resource Manager API."""
     url = "https://resource-manager.api.stackit.cloud/v2/folders"
@@ -119,7 +119,7 @@ def get_all_projects(
 
 
 def get_project_details(
-    project_ids: list[str],
+        project_ids: list[str],
 ) -> list[tuple[str, str]]:
     """Fetches project details for a list of project ids from the Resource Manager API."""
     projects = []
@@ -171,8 +171,8 @@ def get_acls(project_id: str, instance_id: str):
 
 
 def check_database_acl_of_project(
-    project_id: str,
-    cluster_egress_range: list[str],
+        project_id: str,
+        cluster_egress_range: list[str],
 ) -> bool:
     all_acls_are_correct = True
     # Determine the correct egress IP based on the project name
@@ -198,21 +198,31 @@ def check_database_acl_of_project(
 
 
 def get_egress_range(
-    project_name: str,
-    prod_cluster_egress_range: list[str],
-    non_prod_cluster_egress_range: list[str],
+        project_name: str,
+        prod_cluster_egress_range: list[str],
+        non_prod_cluster_egress_range: list[str],
+        additional_prod_ip: str | None = None,
+        additional_non_prod_ip: str | None = None
 ) -> list[str]:
     if "NON-PROD" in project_name.upper():
-        cluster_egress_range = non_prod_cluster_egress_range
+        cluster_egress_range = non_prod_cluster_egress_range + ([additional_non_prod_ip] if additional_non_prod_ip else [])
         logger.info(f"Checking project: {project_name} - Using NON-PROD cluster IP")
     else:
-        cluster_egress_range = prod_cluster_egress_range
+        cluster_egress_range = prod_cluster_egress_range + ([additional_prod_ip] if additional_prod_ip else [])
         logger.info(f"Checking project: {project_name} - Using PROD cluster IP")
     return cluster_egress_range
 
 
 @app.command()
-def validate_org(organization_id: str):
+def validate_org(organization_id: str,
+        additional_prod_ip: str = typer.Option(
+            help="Additional IP Range that is allowed in ACLs of the Production Cluster. Env: ADDITIONAL_PROD_IP",
+            default=None,
+        ),
+        additional_non_prod_ip: str = typer.Option(
+            help="Additional IP Range that is allowed in ACLs of the Non-Prod Cluster. Env: ADDITIONAL_NON_PROD_IP",
+            default=None,
+        ),):
     logger.info("Starting Stackit ACL check script...")
 
     settings = OrgSettings()
@@ -239,11 +249,12 @@ def validate_org(organization_id: str):
             project_name,
             # egress ranges are set in line 221
             cast(list[str], settings.prod_cluster.egress_range),
-            cast(list[str],settings.non_prod_cluster.egress_range),
+            cast(list[str], settings.non_prod_cluster.egress_range),
+            additional_prod_ip, additional_non_prod_ip
         )
 
         if not check_database_acl_of_project(
-            project_id, cluster_egress_range
+                project_id, cluster_egress_range
         ):
             all_acls_are_correct = False
 
@@ -257,15 +268,15 @@ def validate_org(organization_id: str):
 
 @app.command()
 def validate_projects(
-    project_ids: list[str],
-    prod_egress_range: list[str] = typer.Option(
-        help="Egress IP Range of the Production Cluster. Env: PROD_EGRESS_RANGE",
-        default=None,
-    ),
-    non_prod_egress_range: list[str] = typer.Option(
-        help="Egress IP Range of the Non-Prod Cluster. Env: NON_PROD_EGRESS_RANGE",
-        default=None,
-    ),
+        project_ids: list[str],
+        prod_egress_range: list[str] = typer.Option(
+            help="Egress IP Range of the Production Cluster. Env: PROD_EGRESS_RANGE",
+            default=None,
+        ),
+        non_prod_egress_range: list[str] = typer.Option(
+            help="Egress IP Range of the Non-Prod Cluster. Env: NON_PROD_EGRESS_RANGE",
+            default=None,
+        ),
 ):
     logger.info("Starting Stackit ACL check script...")
     all_acls_are_correct = True
@@ -275,7 +286,7 @@ def validate_projects(
             project_name, prod_egress_range, non_prod_egress_range
         )
         if not check_database_acl_of_project(
-            project_id, cluster_egress_range
+                project_id, cluster_egress_range
         ):
             all_acls_are_correct = False
 
