@@ -149,8 +149,9 @@ class TestValidateOrg:
             non_prod_db_acl=["2.2.2.2/32", "5.5.5.5/32"],
         )
 
-
-        result = runner.invoke(app, ["validate-org", "org-id", "--additional-non-prod-ip", "5.5.5.5/32"])
+        result = runner.invoke(
+            app, ["validate-org", "org-id", "--additional-non-prod-ip", "5.5.5.5/32"]
+        )
         assert result.exit_code == 0
 
 
