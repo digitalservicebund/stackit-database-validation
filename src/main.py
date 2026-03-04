@@ -179,14 +179,14 @@ def check_database_acl_of_project(
         db_instance_id = db["id"]
         db_name = db["name"]
         acl_rules = get_acls(project_id, db_instance_id)
-        if set(acl_rules) == set(cluster_egress_range):
+        if set(acl_rules).issubset(set(cluster_egress_range)):
             logger.info(
                 f"✅ Database instance {db_name} ({db_instance_id}): ACL is correct."
             )
         else:
             logger.error(
                 f"❌ Database instance {db_name} ({db_instance_id}): ACL check failed.\n"
-                f"Expected: {cluster_egress_range}\n"
+                f"Allowed: {cluster_egress_range}\n"
                 f"Found:    {acl_rules}"
             )
             all_acls_are_correct = False
@@ -217,16 +217,19 @@ def get_egress_range(
 def validate_org(
     organization_id: str,
     additional_prod_ip: str = typer.Option(
-        help="Additional IP Range that is allowed in ACLs of the Production Cluster. Env: ADDITIONAL_PROD_IP",
+        help="Additional IP Range that is allowed in ACLs of the Production Cluster.",
+        envvar="ADDITIONAL_PROD_IP",
         default=None,
     ),
     additional_non_prod_ip: str = typer.Option(
-        help="Additional IP Range that is allowed in ACLs of the Non-Prod Cluster. Env: ADDITIONAL_NON_PROD_IP",
+        help="Additional IP Range that is allowed in ACLs of the Non-Prod Cluster.",
+        envvar="ADDITIONAL_NON_PROD_IP",
         default=None,
     ),
 ):
     logger.info("Starting Stackit ACL check script...")
-
+    logger.info(f"Additional PROD IP: {additional_prod_ip}")
+    logger.info(f"Additional NON-PROD IP: {additional_non_prod_ip}")
     settings = OrgSettings()
 
     logger.info("Getting cluster egress IPs...")
@@ -271,11 +274,13 @@ def validate_org(
 def validate_projects(
     project_ids: list[str],
     prod_egress_range: list[str] = typer.Option(
-        help="Egress IP Range of the Production Cluster. Env: PROD_EGRESS_RANGE",
+        help="Egress IP Range of the Production Cluster",
+        envvar="PROD_EGRESS_RANGE",
         default=None,
     ),
     non_prod_egress_range: list[str] = typer.Option(
-        help="Egress IP Range of the Non-Prod Cluster. Env: NON_PROD_EGRESS_RANGE",
+        help="Egress IP Range of the Non-Prod Cluster",
+        envvar="NON_PROD_EGRESS_RANGE",
         default=None,
     ),
 ):
