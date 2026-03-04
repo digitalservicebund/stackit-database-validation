@@ -27,6 +27,14 @@ def mock_httpx_responses(
         json={"status": {"egressAddressRanges": non_prod_cluster_ip}},
     )
     httpx_mock.add_response(
+        url=re.compile(".*/v2/folders"),
+        json={
+            "items": [
+                {"folderId": "folder_id_1"},
+            ]
+        },
+    )
+    httpx_mock.add_response(
         url=re.compile(".*/projects"),
         json={
             "items": [
@@ -126,6 +134,25 @@ class TestValidateOrg:
             result = runner.invoke(app, ["validate-org", "org-id"])
         assert result.exit_code == 0
         assert "No databases in this project" in caplog.text
+
+    @patch("main.get_bearer_token")
+    def test_with_additional_prod_ip(
+        self,
+        get_bearer_token_mock: MagicMock,
+        httpx_mock: HTTPXMock,
+    ):
+        mock_httpx_responses(
+            httpx_mock,
+            prod_cluster_ip=["1.1.1.1/32"],
+            non_prod_cluster_ip=["2.2.2.2/32"],
+            prod_db_acl=["1.1.1.1/32"],
+            non_prod_db_acl=["2.2.2.2/32", "5.5.5.5/32"],
+        )
+
+        result = runner.invoke(
+            app, ["validate-org", "org-id", "--additional-non-prod-ip", "5.5.5.5/32"]
+        )
+        assert result.exit_code == 0
 
 
 def mock_httpx_responses_for_validate_projects(
