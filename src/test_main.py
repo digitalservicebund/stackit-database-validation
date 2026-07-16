@@ -38,8 +38,16 @@ def mock_httpx_responses(
         url=re.compile(".*/projects"),
         json={
             "items": [
-                {"projectId": "project_id_1", "name": "project_name_1 PROD"},
-                {"projectId": "project_id_2", "name": "project_name_2 NON-PROD"},
+                {
+                    "projectId": "project_id_1",
+                    "name": "project_name_1 PROD",
+                    "lifecycleState": "ACTIVE",
+                },
+                {
+                    "projectId": "project_id_2",
+                    "name": "project_name_2 NON-PROD",
+                    "lifecycleState": "ACTIVE",
+                },
             ]
         },
     )
