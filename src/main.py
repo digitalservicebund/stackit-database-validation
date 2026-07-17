@@ -109,7 +109,13 @@ def get_all_projects(organization_id: str) -> list[tuple[str, str]]:
         logger.debug(f"Projects response: {response.text}")
         response.raise_for_status()
         projects = response.json().get("items", [])
-        project_ids.extend([(p.get("projectId"), p.get("name")) for p in projects])
+        project_ids.extend(
+            [
+                (p.get("projectId"), p.get("name"))
+                for p in projects
+                if p.get("lifecycleState") == "ACTIVE"
+            ]
+        )
     # Return both the project ID and its name for validation logic
     return project_ids
 
