@@ -1,4 +1,5 @@
 import logging
+import os
 import subprocess
 from functools import lru_cache
 from typing import cast
@@ -43,6 +44,17 @@ class OrgSettings(BaseSettings):
 
 @lru_cache
 def get_bearer_token():
+    service_account_email = os.environ.get("STACKIT_SERVICE_ACCOUNT_EMAIL")
+    if not service_account_email:
+        raise Exception(
+            "STACKIT_SERVICE_ACCOUNT_EMAIL environment variable must be set "
+            "to use identity federation."
+        )
+    env = {
+        **os.environ,
+        "STACKIT_USE_OIDC": "1",
+        "STACKIT_SERVICE_ACCOUNT_EMAIL": service_account_email,
+    }
     try:
         result = subprocess.run(
             [
@@ -54,6 +66,7 @@ def get_bearer_token():
             capture_output=True,
             text=True,
             check=True,
+            env=env,
         )
     except subprocess.CalledProcessError as e:
         raise Exception(f"Could not get auth token: {e.stderr}") from e
