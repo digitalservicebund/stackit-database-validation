@@ -13,8 +13,8 @@ inputs:
   non_prod_egress_range:
     description: 'The CIDR Range of the non-prod cluster'
     required: false
-  stackit_service_account_key:
-    description: "STACKIT Service Account Key to authenticate against STACKIT API"
+  stackit_service_account_email:
+    description: "STACKIT Service Account Email to authenticate against STACKIT API"
     required: true
   additional_non_prod_ip:
     description: "Additional IP address or CIDR range that should be allowed to access non-prod databases."
@@ -52,7 +52,7 @@ runs:
       run:  uv run src/main.py validate-org ${{ inputs.organisation_id }}
       working-directory: ${{ github.action_path }}
       env:
-        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
+        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.stackit_service_account_email }}
         ADDITIONAL_PROD_IP: ${{ inputs.additional_prod_ip }}
         ADDITIONAL_NON_PROD_IP: ${{ inputs.additional_non_prod_ip }}
     - name: "Validate STACKIT Database ACLs in Project"
