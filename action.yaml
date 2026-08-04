@@ -38,7 +38,7 @@ runs:
     - name: "Install STACKIT CLI"
       shell: bash
       run: |
-          curl -L https://github.com/stackitcloud/stackit-cli/releases/download/v0.48.0/stackit-cli_0.48.0_linux_amd64.tar.gz -o stackitcli.tar.gz
+          curl -L https://github.com/stackitcloud/stackit-cli/releases/download/v0.68.0/stackit-cli_0.68.0_linux_amd64.tar.gz -o stackitcli.tar.gz
           tar -xzf stackitcli.tar.gz
           sudo mv stackit /usr/local/bin/stackit
           rm stackitcli.tar.gz
@@ -61,6 +61,6 @@ runs:
       run:  uv run src/main.py validate-projects ${{ inputs.project_id }}
       working-directory: ${{ github.action_path }}
       env:
-        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.stackit_service_account_key }}
+        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.stackit_service_account_email }}
         PROD_EGRESS_RANGE: ${{ inputs.prod_egress_range }}
         NON_PROD_EGRESS_RANGE: ${{ inputs.non_prod_egress_range }}
